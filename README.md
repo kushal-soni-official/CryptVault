@@ -30,6 +30,16 @@ CryptVault encrypts your files locally using **AES-256-GCM** before they ever to
 
 ---
 
+## Preview 
+
+1.
+![1](demo/1.png)
+
+2.  
+![2](demo/2.png)
+
+---
+
 ## 📋 Requirements
 
 - **Python** 3.10 or higher
