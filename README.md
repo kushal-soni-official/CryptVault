@@ -52,7 +52,7 @@ CryptVault encrypts your files locally using **AES-256-GCM** before they ever to
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/cryptvault.git
+git clone https://github.com/kushal-soni-official/CryptVault.git
 cd cryptvault
 ```
 
