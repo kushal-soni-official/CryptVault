@@ -1,108 +1,87 @@
-<div align="center">
-  <h1>🔒 CryptVault</h1>
-  <p><strong>A "Zero-Knowledge" Encrypted File Storage System with Integrated Cyber Tools</strong></p>
-  
-  <p>
-    <img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue.svg" />
-    <img alt="Encryption" src="https://img.shields.io/badge/Encryption-AES--256--GCM-green.svg" />
-    <img alt="Security" src="https://img.shields.io/badge/Security-2FA%20Enabled-orange.svg" />
-    <img alt="Web UI" src="https://img.shields.io/badge/Interface-Web%20%26%20CLI-yellow.svg" />
-  </p>
-</div>
+# 🔒 CryptVault
+
+**CryptVault** is a security-first, "Zero-Knowledge" encrypted file storage system integrated with a suite of professional cybersecurity analysis tools. It is designed to ensure that private data remains private, even from the storage provider, while giving security researchers a unified interface for network and vulnerability analysis.
 
 ---
 
-## 🌟 What is CryptVault?
+## 🚀 Quick Start (Root Folder Access)
 
-**CryptVault** is like a super-secure digital safe designed for your files. Whether you are dealing with sensitive notes, passwords, or personal data, CryptVault ensures that nobody—not even the server itself—can sneak a peek.
+You can now run CryptVault directly from this root directory using our new wrapper scripts. No need to navigate deep into folders!
 
-### ✨ Key Features:
-* 🛡️ **Military-Grade Encryption:** Uses highly secure math (`AES-256-GCM` and `Argon2id`) to lock your files down tightly before they ever leave your device.
-* 👁️ **"Zero-Knowledge" Architecture:** The server acts strictly as a storage locker. It never sees your password and cannot read your unscrambled files. 
-* 📱 **Two-Factor Authentication (2FA):** Just like your bank or social media, it requires a time-based code from an app like **Google Authenticator** or **Authy** for an extra layer of security.
-* 🛠️ **Built-in Hacker Tools:** Comes equipped with a suite of cybersecurity analysis tools like an Nmap scanner, a vulnerability checker, and a network traffic analyzer!
+### 🐧 For Linux Users:
+1. **Initialize Vault:** `./vault.sh cli init`
+2. **Launch Web UI:** `./vault.sh web`
+3. **Scan Network:** `./vault.sh cli scan-network <target>`
+
+### 🪟 For Windows Users:
+1. **Initialize Vault:** `vault.bat cli init`
+2. **Launch Web UI:** `vault.bat web`
+3. **Scan Network:** `vault.bat cli scan-network <target>`
 
 ---
 
-## 🚀 Step 1: Easy Installation (Beginner Friendly!)
+## 🛠️ Main Features
 
-To run CryptVault, make sure you have Python installed on your computer. 
-Open your terminal (or command prompt), go to the project folder, and run these commands:
+*   **Zero-Knowledge Encryption**: All files are encrypted on your local machine using **AES-256-GCM** before being stored. The server never sees your master password or unencrypted data.
+*   **Two-Factor Authentication (2FA)**: Mandatory TOTP (Time-based One-Time Password) setup via apps like Google Authenticator or Authy.
+*   **Integrated Cyber Tools**:
+    *   **Nmap Integration**: Direct port scanning from the CLI.
+    *   **CVE Lookup**: Query the NIST NVD for known software vulnerabilities.
+    *   **Packet Analysis**: Analyze PCAP files for suspicious network patterns using Scapy.
 
+---
+
+## 📋 Installation
+
+### 1. Requirements
+*   Python 3.10 or higher
+*   Pip (Python package manager)
+*   *Note: Nmap must be installed on your system for network scanning features.*
+
+### 2. Setup
 ```bash
-# 1. Move into the project directory
+# Clone or enter the project directory
 cd cryptvault
 
-# 2. Create a safe bubble for your Python app (Virtual Environment)
+# Create and activate a virtual environment
 python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 3. Activate the virtual environment
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-
-# 4. Install CryptVault and all its dependencies
+# Install dependencies
+pip install -r requirements.txt
 pip install -e .
 ```
 
 ---
 
-## 💻 Step 2: Using the Command Line (CLI)
+## 🔮 Future Scope
 
-The Command Line Interface (CLI) gives you fast, text-based control over your vault and cyber tools. With your `venv` activated, you can simply use the `cryptvault` command anywhere!
-
-### 🔐 Setting Up Your Vault
-The very first thing you need to do is initialize your vault.
-```bash
-cryptvault init
-```
-*(This will ask you to set a Master Password and give you a QR Code. Scan the QR code with your phone's authenticator app!)*
-
-### 📁 Managing Your Files
-* **To lock a file into the vault:**
-  ```bash
-  cryptvault store my_secret_file.txt
-  ```
-* **To browse what's inside your vault:**
-  ```bash
-  cryptvault list
-  ```
-* **To retrieve and unlock a file:**
-  ```bash
-  cryptvault retrieve <paste-the-file-id-here>
-  ```
-
-### 🧰 Bonus Cybersecurity Tools
-CryptVault is packed with utilities for analysis:
-* **Scan a website/server for open ports:** 
-  ```bash
-  cryptvault scan-network scanme.nmap.org
-  ```
-* **Check for known software bugs (CVEs):** 
-  ```bash
-  cryptvault cve-check python 3.10
-  ```
-* **Analyze network traffic traps (PCAP files):**
-  ```bash
-  cryptvault packet-analyze traffic_capture.pcap
-  ```
+As this project evolves, we aim to implement the following high-impact features:
+*   **Cloud Synchronization**: Securely sync encrypted vaults across Google Drive, Dropbox, or AWS S3 while maintaining zero-knowledge integrity.
+*   **Hardware Token Support**: Integration with YubiKey and other HSMs for physical multi-factor authentication.
+*   **Multi-User Shared Vaults**: Implementing proxy re-encryption to allow users to securely share specific encrypted files without ever sharing their master keys.
+*   **Mobile Companion App**: A mobile interface for viewing file metadata, performing remote vault locks, and managing 2FA keys.
 
 ---
 
-## 🌐 Step 3: Using the Web Dashboard
+## ⚠️ Warnings
+*   **Do Not Lose Your Master Password**: Since this is zero-knowledge, there is **no password recovery**. If you lose your password and your 2FA device, your data is gone forever.
+*   **Network Scanning Ethics**: Only use the network scanning tools on hardware and networks you own or have explicit permission to test.
+*   **PCAP Sizes**: Large PCAP files (over 500MB) may cause high memory usage during analysis.
 
-If you prefer a beautiful visual interface instead of the black-and-white terminal, CryptVault has a web dashboard!
+---
 
-To start the Web Server, enter this command:
-```bash
-python -m cryptvault.web.app
-```
+## 💡 Suggestions & Notes
+*   **Suggestion**: Use a long, complex passphrase as your master password. A 12+ character phrase is recommended.
+*   **Note**: All stored files are located at `~/.cryptvault/files` on Linux or `C:\Users\<User>\.cryptvault\files` on Windows.
+*   **Compatibility**: This project is fully tested on Ubuntu 22.04+ and Windows 10/11.
 
-Now, open your favorite web browser (Chrome, Firefox, Safari) and visit:
-👉 **[http://localhost:8000](http://localhost:8000)** 👈
+---
 
-From the dashboard, you can point, click, and drag to safely encrypt and upload files straight from your browser. 
-*(Note: CryptVault uses modern Web Crypto APIs to mathematically lock your files inside your browser BEFORE uploading them. True zero-knowledge!)*
+## ⚖️ License
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details. (Note: This is a project intended for security research and educational purposes).
 
 ---
 <div align="center">
-  <i>Created for college cybersecurity submissions. Built cleanly and defensively.</i>
+  <i>"Efficiency is doing things right; effectiveness is doing the right things."</i>
 </div>
