@@ -1,14 +1,40 @@
-// ============================================================
-//  CryptVault — Client-Side Encryption (Web UI)
-//  All encryption/decryption happens in the browser.
-//  The server never sees your password or plaintext data.
-// ============================================================
-
 /**
- * Derive an AES-256-GCM key from a password + random salt using PBKDF2.
- * NOTE: The CLI uses Argon2id. Files are NOT cross-compatible between
- * CLI and Web UI — each tracks its "source" to prevent mismatched decryption.
+ * CryptVault — Premium Client-Side Encryption
+ * Developer: Kushal Soni
+ * All encryption/decryption happens in-browser via Web Crypto API.
  */
+
+// ── UTILS ─────────────────────────────────────────────────────
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Simple icon choice based on type
+    const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+    
+    toast.innerHTML = `<span>${icon}</span> ${message}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ── CRYPTO ────────────────────────────────────────────────────
+
 async function deriveKey(password, salt) {
     const enc = new TextEncoder();
     const keyMaterial = await window.crypto.subtle.importKey(
@@ -33,19 +59,6 @@ async function deriveKey(password, salt) {
     );
 }
 
-function displayStatus(msg, type = "info") {
-    const statusDiv = document.getElementById("upload-status");
-    statusDiv.textContent = msg;
-    statusDiv.className = "status-msg " + "status-" + type + " show";
-    
-    // Auto-hide success messages after 5 seconds
-    if (type === "success") {
-        setTimeout(() => {
-            statusDiv.classList.remove("show");
-        }, 5000);
-    }
-}
-
 function bufToHex(buffer) {
     return Array.from(new Uint8Array(buffer))
         .map(b => b.toString(16).padStart(2, "0"))
@@ -60,49 +73,114 @@ function hexToBuf(hex) {
     return bytes.buffer;
 }
 
-// ── Upload & Encrypt ──────────────────────────────────────────
+// ── UI INITIALIZATION ──────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Format all existing sizes in the table
+    document.querySelectorAll('.file-size-cell').forEach(cell => {
+        const bytes = parseInt(cell.getAttribute('data-bytes'));
+        if (!isNaN(bytes)) {
+            cell.textContent = formatBytes(bytes);
+        }
+    });
+
+    // Password Visibility Toggle
+    const toggleBtn = document.getElementById('toggle-password-btn');
+    const passwordInput = document.getElementById('master-password');
+    if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            toggleBtn.innerHTML = isPassword 
+                ? '<svg class="icon-svg" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M9.88 9.88 3.59 3.59"/><path d="M2 12s3-7 10-7a7.14 7.14 0 0 1 3.49.93"/><path d="M22 12s-3 7-10 7a7.14 7.14 0 0 1-3.49-.93"/><path d="m14.12 14.12-6.24-6.24"/><circle cx="12" cy="12" r="3"/><path d="m15 15 5.41 5.41"/></svg>'
+                : '<svg class="icon-svg" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+        });
+    }
+
+    // Real-time Search
+    const searchInput = document.getElementById('vault-search');
+    const tableRows = document.querySelectorAll('.file-row');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            tableRows.forEach(row => {
+                const fileName = row.querySelector('.name-text').textContent.toLowerCase();
+                row.style.display = fileName.includes(query) ? '' : 'none';
+            });
+        });
+    }
+
+    // Drag & Drop
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const nameDisplay = document.getElementById('file-name-display');
+
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--gold-primary)';
+            dropZone.style.background = 'rgba(212, 175, 55, 0.1)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--glass-border)';
+            dropZone.style.background = 'rgba(0,0,0,0.1)';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--glass-border)';
+            dropZone.style.background = 'rgba(0,0,0,0.1)';
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                nameDisplay.textContent = `Selected: ${fileInput.files[0].name}`;
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                nameDisplay.textContent = `Selected: ${fileInput.files[0].name}`;
+            }
+        });
+    }
+});
+
+// ── CORE ACTIONS ─────────────────────────────────────────────
 
 document.getElementById("upload-btn").addEventListener("click", async () => {
     const password = document.getElementById("master-password").value;
     const fileInput = document.getElementById("file-input");
 
     if (!password) {
-        displayStatus("Please enter your master password.", "error");
+        showToast("Access Key required for encryption.", "error");
         return;
     }
     if (fileInput.files.length === 0) {
-        displayStatus("Please select a file.", "error");
+        showToast("Please select a file to secure.", "error");
         return;
     }
 
     const file = fileInput.files[0];
-
-    // Client-side file size check (100 MB)
     if (file.size > 100 * 1024 * 1024) {
-        displayStatus("File too large. Maximum size is 100 MB.", "error");
+        showToast("File exceeds 100MB limit.", "error");
         return;
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-
     try {
-        // Generate a unique random salt for this file (16 bytes)
+        const arrayBuffer = await file.arrayBuffer();
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
         const key = await deriveKey(password, salt);
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
 
-        displayStatus("Encrypting...", "info");
+        showToast("Cryptographic processing active...", "info");
         const encryptedBuffer = await window.crypto.subtle.encrypt(
             { name: "AES-GCM", iv: iv },
             key,
             arrayBuffer
         );
 
-        const combinedBlob = new Blob([encryptedBuffer]);
-
-        displayStatus("Uploading...", "info");
         const formData = new FormData();
-        formData.append("file", combinedBlob, file.name);
+        formData.append("file", new Blob([encryptedBuffer]), file.name);
         formData.append("nonce", bufToHex(iv));
         formData.append("tag", "included_in_ciphertext");
         formData.append("salt", bufToHex(salt));
@@ -114,89 +192,75 @@ document.getElementById("upload-btn").addEventListener("click", async () => {
         });
 
         if (response.ok) {
-            displayStatus("File uploaded securely!", "success");
-            // Refresh table after a short delay
-            setTimeout(() => window.location.reload(), 1500);
+            showToast("Asset secured in vault.", "success");
+            setTimeout(() => window.location.reload(), 1200);
         } else {
             const err = await response.json();
-            displayStatus(err.detail || "Upload failed.", "error");
+            showToast(err.detail || "Vault rejection.", "error");
         }
     } catch (e) {
         console.error(e);
-        displayStatus("Encryption failed. Check console for details.", "error");
+        showToast("Encryption Engine failure.", "error");
     }
 });
-
-// ── Download & Decrypt ────────────────────────────────────────
 
 async function downloadAndDecrypt(fileId, originalName) {
     const password = document.getElementById("master-password").value;
     if (!password) {
-        alert("Please enter your master password to decrypt this file.");
+        showToast("Password required for decryption.", "error");
         return;
     }
 
     try {
+        showToast("Fetching encrypted payload...", "info");
         const response = await fetch(`/api/download/${fileId}`);
-        if (!response.ok) throw new Error("Failed to download");
+        if (!response.ok) throw new Error("Network rejection");
 
         const nonceHex = response.headers.get("X-Nonce");
         const saltHex = response.headers.get("X-Salt");
         const encryptedBlob = await response.blob();
         const encryptedBuffer = await encryptedBlob.arrayBuffer();
 
-        // Use the per-file salt that was stored during upload
         const salt = new Uint8Array(hexToBuf(saltHex));
         const key = await deriveKey(password, salt);
         const iv = hexToBuf(nonceHex);
 
+        showToast("Decryption in progress...", "info");
         const decryptedBuffer = await window.crypto.subtle.decrypt(
             { name: "AES-GCM", iv: iv },
             key,
             encryptedBuffer
         );
 
-        const decryptedBlob = new Blob([decryptedBuffer]);
-        const downloadUrl = URL.createObjectURL(decryptedBlob);
-
+        const downloadUrl = URL.createObjectURL(new Blob([decryptedBuffer]));
         const a = document.createElement("a");
         a.href = downloadUrl;
         a.download = originalName;
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         URL.revokeObjectURL(downloadUrl);
+        showToast("File decrypted and downloaded.", "success");
 
     } catch (e) {
         console.error(e);
-        alert("Decryption failed. Incorrect password or corrupted file.");
+        showToast("Decryption failed. Invalid key.", "error");
     }
 }
 
-// ── Delete File ───────────────────────────────────────────────
-
 async function deleteFile(fileId, fileName) {
-    if (!confirm(`Permanently delete "${fileName}"? This cannot be undone.`)) {
-        return;
-    }
+    if (!confirm(`Permanently purge "${fileName}" from vault?`)) return;
 
     try {
         const response = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
         if (response.ok) {
-            // Remove the row from the table without full page reload
-            const row = document.getElementById(`file-${fileId}`);
-            if (row) row.remove();
-
-            // Check if vault is now empty
-            const tbody = document.querySelector("#files-table tbody");
-            if (tbody && tbody.children.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4">Vault is empty.</td></tr>';
-            }
+            document.getElementById(`file-${fileId}`).remove();
+            const countStat = document.getElementById('vault-count-stat');
+            if (countStat) countStat.textContent = parseInt(countStat.textContent) - 1;
+            showToast("Asset purged successfully.", "success");
         } else {
-            alert("Failed to delete file.");
+            showToast("Purge request failed.", "error");
         }
     } catch (e) {
         console.error(e);
-        alert("Delete request failed.");
+        showToast("Purge Engine error.", "error");
     }
 }

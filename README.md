@@ -30,16 +30,6 @@ CryptVault encrypts your files locally using **AES-256-GCM** before they ever to
 
 ---
 
-## Preview 
-
-1.
-![1](demo/1.png)
-
-2.  
-![2](demo/2.png)
-
----
-
 ## 📋 Requirements
 
 - **Python** 3.10 or higher
@@ -52,7 +42,7 @@ CryptVault encrypts your files locally using **AES-256-GCM** before they ever to
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/kushal-soni-official/CryptVault.git
+git clone https://github.com/your-username/cryptvault.git
 cd cryptvault
 ```
 

@@ -88,8 +88,8 @@ async def upload_file(
         with open(salt_path, "w") as f:
             f.write(salt)
 
-        logger.info("File uploaded via web: %s (%s bytes)", file_id, len(content))
-        return {"id": file_id, "name": file.filename, "size": original_size, "message": "File uploaded securely"}
+        logger.info(f"Asset successfully secured: {file_id} ({file.filename})")
+        return {"id": file_id, "name": file.filename, "size": original_size, "message": "Encryption complete. Asset secured."}
     except HTTPException:
         raise
     except Exception as e:
